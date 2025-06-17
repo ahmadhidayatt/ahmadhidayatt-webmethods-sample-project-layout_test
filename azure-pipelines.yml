@@ -1,42 +1,43 @@
 trigger:
-  - main  # atau ganti dengan branch kamu
+- main
 
 variables:
-  SAG_HOME: '$(SAG_HOME)'
-  SAG_CI_HOME: '$(SAG_CI_HOME)'
-  PROJECT_NAME: '$(Build.DefinitionName)' # setara dengan JOB_NAME di Jenkins
+- group: SAG_SETTINGS
+- name: PROJECT_NAME
+  value: $(Build.DefinitionName)
 
 pool:
-  name: Default  # atau gunakan self-hosted agent jika perlu
+  name: Default  # self-hosted Windows agent
 
 stages:
-  - stage: Build
-    jobs:
-      - job: BuildJob
-        steps:
-          - script: |
-              call $(SAG_HOME)\common\lib\ant\bin\ant -DSAGHome=$(SAG_HOME) -DSAG_CI_HOME=$(SAG_CI_HOME) -DprojectName=$(PROJECT_NAME) build
-            displayName: 'Build with Ant'
+- stage: Build
+  jobs:
+  - job: BuildJob
+    steps:
+    - checkout: self
+    - script: |
+        call "%SAG_HOME%\common\lib\ant\bin\ant" -DSAGHome=%SAG_HOME% -DSAG_CI_HOME=%SAG_CI_HOME% -DprojectName=%PROJECT_NAME% build
+      displayName: 'Build with Ant'
 
-  - stage: Deploy
-    jobs:
-      - job: DeployJob
-        steps:
-          - script: |
-              call $(SAG_HOME)\common\lib\ant\bin\ant -DSAGHome=$(SAG_HOME) -DSAG_CI_HOME=$(SAG_CI_HOME) -DprojectName=$(PROJECT_NAME) deploy
-            displayName: 'Deploy with Ant'
+- stage: Deploy
+  jobs:
+  - job: DeployJob
+    steps:
+    - script: |
+        call "%SAG_HOME%\common\lib\ant\bin\ant" -DSAGHome=%SAG_HOME% -DSAG_CI_HOME=%SAG_CI_HOME% -DprojectName=%PROJECT_NAME% deploy
+      displayName: 'Deploy with Ant'
 
-  - stage: Test
-    jobs:
-      - job: TestJob
-        steps:
-          - script: |
-              call $(SAG_HOME)\common\lib\ant\bin\ant -DSAGHome=$(SAG_HOME) -DSAG_CI_HOME=$(SAG_CI_HOME) -DprojectName=$(PROJECT_NAME) test
-            displayName: 'Test with Ant'
+- stage: Test
+  jobs:
+  - job: TestJob
+    steps:
+    - script: |
+        call "%SAG_HOME%\common\lib\ant\bin\ant" -DSAGHome=%SAG_HOME% -DSAG_CI_HOME=%SAG_CI_HOME% -DprojectName=%PROJECT_NAME% test
+      displayName: 'Test with Ant'
 
-          - task: PublishTestResults@2
-            inputs:
-              testResultsFormat: 'JUnit'
-              testResultsFiles: '**/report/*.xml'
-              failTaskOnFailedTests: true
-            displayName: 'Publish JUnit Test Results'
+    - task: PublishTestResults@2
+      inputs:
+        testResultsFormat: 'JUnit'
+        testResultsFiles: '**/report/*.xml'
+        failTaskOnFailedTests: true
+      displayName: 'Publish JUnit Test Results'
