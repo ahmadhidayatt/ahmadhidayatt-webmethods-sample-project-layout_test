@@ -7,7 +7,7 @@ variables:
   PROJECT_NAME: '$(Build.DefinitionName)' # setara dengan JOB_NAME di Jenkins
 
 pool:
-  vmImage: 'windows-latest'  # atau gunakan self-hosted agent jika perlu
+  name: Default  # atau gunakan self-hosted agent jika perlu
 
 stages:
   - stage: Build
