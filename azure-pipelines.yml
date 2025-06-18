@@ -15,24 +15,50 @@ stages:
   - job: BuildJob
     steps:
     - checkout: self
+
     - script: |
         call "%SAG_HOME%\common\lib\ant\bin\ant" -DSAGHome=%SAG_HOME% -DSAG_CI_HOME=%SAG_CI_HOME% -DprojectName=%PROJECT_NAME% build
       displayName: 'Build with Ant'
 
+    - task: PublishBuildArtifacts@1
+      inputs:
+        PathtoPublish: '$(System.DefaultWorkingDirectory)/target/$(PROJECT_NAME)/build'
+        ArtifactName: 'BuildOutput'
+        publishLocation: 'Container'
+      displayName: 'Publish Build Folder as Artifact'
+
 - stage: Deploy
+  dependsOn: Build
   jobs:
   - job: DeployJob
     steps:
+    - task: DownloadBuildArtifacts@0
+      inputs:
+        buildType: 'current'
+        downloadType: 'single'
+        artifactName: 'BuildOutput'
+        downloadPath: '$(Pipeline.Workspace)'
+      displayName: 'Download Build Artifact'
+
     - script: |
-        call "%SAG_HOME%\common\lib\ant\bin\ant" -DSAGHome=%SAG_HOME% -DSAG_CI_HOME=%SAG_CI_HOME% -DprojectName=%PROJECT_NAME% deploy
+        call "%SAG_HOME%\common\lib\ant\bin\ant" -DSAGHome=%SAG_HOME% -DSAG_CI_HOME=%SAG_CI_HOME% -DprojectName=%PROJECT_NAME% -Dbuild.dir=$(Pipeline.Workspace)\BuildOutput deploy
       displayName: 'Deploy with Ant'
 
 - stage: Test
+  dependsOn: Deploy
   jobs:
   - job: TestJob
     steps:
+    - task: DownloadBuildArtifacts@0
+      inputs:
+        buildType: 'current'
+        downloadType: 'single'
+        artifactName: 'BuildOutput'
+        downloadPath: '$(Pipeline.Workspace)'
+      displayName: 'Download Build Artifact'
+
     - script: |
-        call "%SAG_HOME%\common\lib\ant\bin\ant" -DSAGHome=%SAG_HOME% -DSAG_CI_HOME=%SAG_CI_HOME% -DprojectName=%PROJECT_NAME% test
+        call "%SAG_HOME%\common\lib\ant\bin\ant" -DSAGHome=%SAG_HOME% -DSAG_CI_HOME=%SAG_CI_HOME% -DprojectName=%PROJECT_NAME% -Dbuild.dir=$(Pipeline.Workspace)\BuildOutput test
       displayName: 'Test with Ant'
 
     - task: PublishTestResults@2
