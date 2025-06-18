@@ -23,7 +23,7 @@ stages:
           -DprojectName=%PROJECT_NAME% build
       displayName: 'Build with Ant'
 
-    - publish: '$(System.DefaultWorkingDirectory)/target'
+    - publish: '$(System.DefaultWorkingDirectory)/target/$(PROJECT_NAME)/build'
       artifact: BuildOutput
       displayName: 'Publish Build Artifacts'
 
