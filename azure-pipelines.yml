@@ -37,17 +37,24 @@ stages:
       displayName: 'Download Build Artifacts'
 
     - script: |
-        echo === Artifact content ===
-        dir "$(Pipeline.Workspace)\BuildOutput" /s
-      displayName: 'List Artifact Content (Debug)'
+        echo Copying artifact to expected build path...
+        set TARGET_BUILD_PATH=$(System.DefaultWorkingDirectory)\target\$(PROJECT_NAME)\build
+        mkdir "%TARGET_BUILD_PATH%" 2>nul
+        xcopy /E /I /Y "$(Pipeline.Workspace)\BuildOutput\*" "%TARGET_BUILD_PATH%"
+      displayName: 'Copy Artifacts to Target Build Folder'
+
+    - script: |
+        echo === Verifying build contents ===
+        dir "$(System.DefaultWorkingDirectory)\target\$(PROJECT_NAME)\build" /s
+      displayName: 'Verify Build Folder Content'
 
     - script: |
         call "%SAG_HOME%\common\lib\ant\bin\ant" ^
           -DSAGHome=%SAG_HOME% ^
           -DSAG_CI_HOME=%SAG_CI_HOME% ^
-          -DprojectName=%PROJECT_NAME% ^
-          -Dbuild.dir=$(Pipeline.Workspace)\BuildOutput deploy
+          -DprojectName=%PROJECT_NAME% deploy
       displayName: 'Deploy with Ant'
+
 
 - stage: Test
   dependsOn: Deploy
